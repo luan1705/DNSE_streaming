@@ -127,6 +127,30 @@ def fmt_time_z_to_minute(ts: str) -> str | None:
     dt = dt.replace(second=0, microsecond=0)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
+def to_float(x):
+    # thiếu/None/"" -> None, còn lại -> float
+    if x is None:
+        return None
+    try:
+        if isinstance(x, str):
+            x = x.strip()
+            if x == "":
+                return None
+        return float(x)
+    except Exception:
+        return None
+
+def to_int(x):
+    v = to_float(x)
+    return None if v is None else int(v)
+
+def round2(x):
+    return None if x is None else round(x, 2)
+
+def mul(x, k):
+    return None if x is None else x * k
+
+
 def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload)
@@ -136,31 +160,35 @@ def on_message(client, userdata, msg):
 
         sym = data.get('symbol')
         time= fmt_time_z_to_minute(data.get("tradingTime") or "")
+        k = 10
 
         result = {
             "function": "dnse_asset",
             "content": {
                 "symbol": sym,
                 "time":  time,
-                "ceiling":  round(float((data.get("highLimitPrice") or None)),2),
-                "floor":    round(float((data.get("lowLimitPrice") or None)),2),
-                "refPrice": round(float((data.get("referencePrice") or None)),2),
-                "matchPrice": round(float(data.get("matchPrice") or None),2),
-                "matchVol":   round(float(data.get("matchQuantity") or None)*10,2),
-                "matchChange": round(float(data.get("changedValue") or None),2),
-                "matchRatioChange": round(float(data.get("changedRatio") or None),2),
-                "totalVol": round(float(data.get("totalVolumeTraded") or None)*10,2),
-                "totalVal": round(float(data.get("grossTradeAmount") or None)*1000000000,2),
-                "high":  round(float((data.get("highestPrice") or None)),2),
-                "low":   round(float((data.get("lowestPrice") or None)),2),
-                "open":  round(float((data.get("openPrice")) or None),2),
-                "close": round(float((data.get("matchPrice")) or None),2),
-
-                'foreignBuyVol': int(float(data.get("buyForeignQuantity") or None)*10),
-                'foreignSellVol': int(float(data.get("sellForeignQuantity") or None)*10),
-                'foreignRoom': int(float(data.get("foreignerOrderLimitQuantity") or None)*10),
-                'foreignBuyVal': float(data.get("buyForeignValue") or None) * 1_000_000_000,
-                'foreignSellVal': float(data.get("sellForeignValue") or None) * 1_000_000_000
+                "ceiling":  round2(to_float(data.get("highLimitPrice"))),
+                "floor":    round2(to_float(data.get("lowLimitPrice"))),
+                "refPrice": round2(to_float(data.get("referencePrice"))),
+            
+                "matchPrice": round2(mp),
+                "matchVol":   round2(mul(to_float(data.get("matchQuantity")), k)),
+                "matchChange": round2(to_float(data.get("changedValue"))),
+                "matchRatioChange": round2(to_float(data.get("changedRatio"))),
+            
+                "totalVol": round2(mul(to_float(data.get("totalVolumeTraded")), k)),
+                "totalVal": round2(mul(to_float(data.get("grossTradeAmount")), 1_000_000_000)),
+            
+                "high":  round2(to_float(data.get("highestPrice"))),
+                "low":   round2(to_float(data.get("lowestPrice"))),
+                "open":  round2(to_float(data.get("openPrice"))),
+                "close": round2(to_float(data.get("closePrice"))),
+            
+                "foreignBuyVol":  mul(to_int(data.get("buyForeignQuantity")), k),
+                "foreignSellVol": mul(to_int(data.get("sellForeignQuantity")), k),
+                "foreignRoom":    mul(to_int(data.get("foreignerOrderLimitQuantity")), k),
+                "foreignBuyVal":  mul(to_float(data.get("buyForeignValue")), 1_000_000_000),
+                "foreignSellVal": mul(to_float(data.get("sellForeignValue")), 1_000_000_000),
             }}
 
         # Publish result sang Redis để Hub gom về 1 WS port

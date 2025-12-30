@@ -242,7 +242,6 @@ def main():
 
         symbols = set()
         for r0 in info_rows: symbols.add(r0["symbol"])
-        for r0 in top_rows:  symbols.add(r0["symbol"])
         ensure_rows = [{"symbol": s} for s in symbols if s]
 
         t0 = time.time()
