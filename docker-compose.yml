@@ -1,0 +1,57 @@
+services:
+
+#=============================================PRODUCER================================================
+#---------------------------------------------EBOARD TABLE------------------------------------------------
+  eboardinfo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dnse_streaming:latest
+    container_name: eboardinfo
+    command: python3 source/eboard_info.py
+    networks:
+      - appnet
+    restart: unless-stopped
+
+
+
+#---------------------------------------------EBOARD FOREIGN------------------------------------------------
+  eboardtopprice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dnse_streaming:latest
+    container_name: eboardtopprice
+    command: python3 source/eboard_top_price.py
+    networks:
+      - appnet
+    restart: unless-stopped
+
+
+
+#---------------------------------------------INDICES------------------------------------------------
+  indices:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dnse_streaming:latest
+    container_name: indices
+    command: python3 source/indices.py
+    networks:
+      - appnet
+    restart: unless-stopped
+
+  dnsewriter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dnse_streaming:latest
+    container_name: dnsewriter
+    command: python3 db_writer/dnsewriter.py
+    networks:
+      - appnet
+    restart: unless-stopped
+
+networks:
+  appnet:
+    driver: bridge
