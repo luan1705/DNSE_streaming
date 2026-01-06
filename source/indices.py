@@ -13,7 +13,7 @@ from List.indice import indice
 
 # ---------- Cấu hình qua ENV ----------
 REDIS_URL   = "redis://default:%40Vns123456@videv.cloud:6379/1"
-CHANNEL = "DNSE_streaming"
+CHANNEL = "DNSE_indices"
 # --------------------------------------
 
 #------------------------------Cấu hình redis----------------------------------------------------
@@ -133,14 +133,12 @@ def on_message(client, userdata, msg):
         sym = data.get("indexName")  # VD: VN100
         time=fmt_time_z_to_minute(data.get("transactTime") or "")
 
-        result = {
-            "function": "indices",
-            "content": {
+        result ={
                 "symbol": sym,
                 "time:": time,
                 "point": float(data.get("valueIndexes") or 0),
                 "refPoint": float(data.get("priorValueIndexes") or 0),
-                "change": float(round(data.get("changedValue"), 2) or 0),
+                "change": float(round(data.get("changedValue"), 2) or 0) if data.get("changedValue") is not None else 0,
                 "ratioChange": float(data.get("changedRatio") or 0),
 
                 "totalMatchVol": float(data.get("contauctAccTrdVol") or 0),
@@ -152,23 +150,17 @@ def on_message(client, userdata, msg):
                 "totalVol": float(data.get("totalVolumeTraded") or 0),
                 "totalVal": float(data.get("grossTradeAmount") or 0) * 1_000_000_000,
 
-                "advancersDecliners": [
-                    float(data.get("fluctuationUpIssueCount") or 0),
-                    float(data.get("fluctuationSteadinessIssueCount") or 0),
-                    float(data.get("fluctuationDownIssueCount") or 0),
-                ],
-                "advancersDeclinersVal": [
-                    float(data.get("fluctuationUpIssueVolume") or 0),
-                    float(data.get("fluctuationSteadinessIssueVolume") or 0),
-                    float(data.get("fluctuationDownIssueVolume") or 0),
-                ],
-                "ceilingFloor": [
-                    float(data.get("fluctuationUpperLimitIssueCount") or 0),
-                    float(data.get("fluctuationLowerLimitIssueCount") or 0),
-                ],
-            }
-        }
+                "advancers":float(data.get("fluctuationUpIssueCount") or 0),
+                "noChanges":float(data.get("fluctuationSteadinessIssueCount") or 0),
+                "decliners":float(data.get("fluctuationDownIssueCount") or 0),
 
+                "advancersVal": float(data.get("fluctuationUpIssueVolume") or 0),
+                "noChangesVal": float(data.get("fluctuationSteadinessIssueVolume") or 0),
+                "declinersVal": float(data.get("fluctuationDownIssueVolume") or 0),
+
+                "ceiling": float(data.get("fluctuationUpperLimitIssueCount") or 0),
+                "floor": float(data.get("fluctuationLowerLimitIssueCount") or 0),
+            }
         # Publish result sang Redis để Hub gom về 1 WS port
         publish(result)
 

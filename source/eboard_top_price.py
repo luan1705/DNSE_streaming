@@ -12,7 +12,7 @@ from List.exchange import x10_list,still_list
 
 # ---------- Cấu hình qua ENV ----------
 REDIS_URL   = "redis://default:%40Vns123456@videv.cloud:6379/1"
-CHANNEL = "DNSE_streaming"
+CHANNEL = "DNSE_asset"
 # --------------------------------------
 
 #------------------------------Cấu hình redis----------------------------------------------------
@@ -161,9 +161,7 @@ def on_message(client, userdata, msg):
         time = fmt_time_z_to_minute(sending_time) if sending_time else None
         z = lambda v: None if (v in (0, 0.0, "0")) else v
 
-        result = {
-            "function": "dnse_asset",
-            "content": {
+        result ={
                 "symbol": sym,
                 "time": time,
 
@@ -175,7 +173,6 @@ def on_message(client, userdata, msg):
                 "sellPrice2": z(s_price[1]), "sellVol2": z(s_vol[1]),
                 "sellPrice3": z(s_price[2]), "sellVol3": z(s_vol[2]),
             }
-        }
 
         # Publish result sang Redis để Hub gom về 1 WS port
         publish(result)

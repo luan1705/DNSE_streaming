@@ -13,7 +13,7 @@ from List.exchange import x10_list,still_list
 
 # ---------- Cấu hình qua ENV ----------
 REDIS_URL   = "redis://default:%40Vns123456@videv.cloud:6379/1"
-CHANNEL = "DNSE_streaming"
+CHANNEL = "DNSE_asset"
 # --------------------------------------
 
 #------------------------------Cấu hình redis----------------------------------------------------
@@ -154,27 +154,25 @@ def mul(x, k):
 def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload)
-        mp = data.get("matchPrice", None)
-        if mp is None:
+        mq = to_float(data.get("matchQuantity"))
+        if mq is None:
             return
 
         sym = data.get('symbol')
         time= fmt_time_z_to_minute(data.get("tradingTime") or "")
         k = 10
 
-        result = {
-            "function": "dnse_asset",
-            "content": {
+        result ={
                 "symbol": sym,
                 "time":  time,
                 "ceiling":  round2(to_float(data.get("highLimitPrice"))),
                 "floor":    round2(to_float(data.get("lowLimitPrice"))),
                 "refPrice": round2(to_float(data.get("referencePrice"))),
             
-                "matchPrice": round2(mp),
-                "matchVol":   round2(mul(to_float(data.get("matchQuantity")), k)),
-                "matchChange": round2(to_float(data.get("changedValue"))),
-                "matchRatioChange": round2(to_float(data.get("changedRatio"))),
+                "matchPrice": round2(to_float(data.get("matchPrice"))),
+                "matchVol": round2(mul(mq, k)),
+                "matchChange": round2(to_float(data.get("changedValue")) or 0.0),
+                "matchRatioChange": round2(to_float(data.get("changedRatio")) or 0.0),
             
                 "totalVol": round2(mul(to_float(data.get("totalVolumeTraded")), k)),
                 "totalVal": round2(mul(to_float(data.get("grossTradeAmount")), 1_000_000_000)),
@@ -189,7 +187,7 @@ def on_message(client, userdata, msg):
                 "foreignRoom":    mul(to_int(data.get("foreignerOrderLimitQuantity")), k),
                 "foreignBuyVal":  mul(to_float(data.get("buyForeignValue")), 1_000_000_000),
                 "foreignSellVal": mul(to_float(data.get("sellForeignValue")), 1_000_000_000),
-            }}
+            }
 
         # Publish result sang Redis để Hub gom về 1 WS port
         publish(result)

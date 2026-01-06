@@ -15,8 +15,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 REDIS_URL = os.getenv("REDIS_URL", "redis://default:%40Vns123456@videv.cloud:6379/1")
 DB_URL    = os.getenv("DB_URL", "postgresql+psycopg2://vnsfintech:%40Vns123456@videv.cloud:5432/vnsfintech")
 
-PATTERNS = os.getenv("PATTERNS", "DNSE_streaming").split(",")
-
 FLUSH_INTERVAL_MS = int(os.getenv("FLUSH_INTERVAL_MS", "200"))
 MAX_BUFFER_SIZE   = int(os.getenv("MAX_BUFFER_SIZE", "5000"))
 
@@ -49,21 +47,21 @@ engine = create_engine(
 )
 
 md = MetaData()
-eboard      = Table("eboard", md, schema="DNSE_stream", autoload_with=engine)
+asset      = Table("asset", md, schema="DNSE_stream", autoload_with=engine)
 indices_tbl = Table("indices", md, schema="DNSE_stream", autoload_with=engine)
 
 # ======================
 # SQL
 # ======================
-SQL_ENSURE_EBOARD = text("""
-    INSERT INTO "DNSE_stream".eboard(symbol)
+SQL_ENSURE_ASSET = text("""
+    INSERT INTO "DNSE_stream".asset(symbol)
     VALUES (:symbol)
     ON CONFLICT (symbol) DO NOTHING
 """)
 
 # INFO snapshot (flat)
 SQL_UPDATE_INFO = text("""
-    UPDATE "DNSE_stream".eboard
+    UPDATE "DNSE_stream".asset
     SET
       "ceiling"  = COALESCE(:ceiling, "ceiling"),
       "floor"    = COALESCE(:floor, "floor"),
@@ -92,7 +90,7 @@ SQL_UPDATE_INFO = text("""
 
 # TOPPRICE orderbook (flat)
 SQL_UPDATE_TOPPRICE = text("""
-    UPDATE "DNSE_stream".eboard
+    UPDATE "DNSE_stream".asset
     SET
       "buyPrice1" = :buyPrice1, "buyVol1" = :buyVol1,
       "buyPrice2" = :buyPrice2, "buyVol2" = :buyVol2,
@@ -160,14 +158,6 @@ def content_to_row_topprice(content: dict) -> dict:
     }
 
 def content_to_row_indices(content: dict) -> dict:
-    a  = (content.get("advancersDecliners") or [])
-    av = (content.get("advancersDeclinersVal") or [])
-    cf = (content.get("ceilingFloor") or [])
-
-    a  = (a  + [None, None, None])[:3]
-    av = (av + [None, None, None])[:3]
-    cf = (cf + [None, None])[:2]
-
     return {
         "symbol": content.get("symbol"),
         "point": content.get("point"),
@@ -182,16 +172,16 @@ def content_to_row_indices(content: dict) -> dict:
         "totalVol": content.get("totalVol"),
         "totalVal": content.get("totalVal"),
 
-        "advancers": a[0],
-        "noChange": a[1],
-        "decliners": a[2],
+        "advancers": content.get("advancers"),
+        "noChanges": content.get("noChanges"),
+        "decliners": content.get("decliners"),
 
-        "advancersVal": av[0],
-        "noChangeVal": av[1],
-        "declinersVal": av[2],
+        "advancersVal": content.get("advancersVal"),
+        "noChangesVal": content.get("noChangesVal"),
+        "declinersVal": content.get("declinersVal"),
 
-        "ceiling": cf[0],
-        "floor": cf[1],
+        "ceiling": content.get("ceiling"),
+        "floor": content.get("floor"),
     }
 
 # ======================
@@ -218,8 +208,8 @@ def is_topprice_asset(content: dict) -> bool:
 # ======================
 def main():
     pubsub = r.pubsub()
-    pubsub.psubscribe(*[p.strip() for p in PATTERNS if p.strip()])
-    logging.info("DB_WRITER listening patterns=%s ...", PATTERNS)
+    pubsub.subscribe("DNSE_asset", "DNSE_indices")
+    logging.info("DB_WRITER listening channels=%s ...", ["DNSE_asset", "DNSE_indices"])
 
     info_buf: dict[str, dict]     = {}
     topprice_buf: dict[str, dict] = {}
@@ -248,7 +238,7 @@ def main():
         try:
             with engine.begin() as conn:
                 if ensure_rows:
-                    conn.execute(SQL_ENSURE_EBOARD, ensure_rows)
+                    conn.execute(SQL_ENSURE_ASSET, ensure_rows)
 
                 if info_rows:
                     conn.execute(SQL_UPDATE_INFO, info_rows)
@@ -275,7 +265,7 @@ def main():
                 flush()
             continue
 
-        if msg.get("type") != "pmessage":
+        if msg.get("type") != "message":
             continue
 
         data_str = msg.get("data")
@@ -284,19 +274,24 @@ def main():
 
         try:
             raw = json.loads(data_str)
+            ch = msg.get("channel")
+            if isinstance(ch, bytes):
+                ch = ch.decode()
         except Exception:
             continue
 
-        fn = raw.get("function")
-        content = raw.get("content") or {}
+        content = raw
         symbol = content.get("symbol")
+        if not symbol:
+            continue
 
-        if fn == "dnse_asset" and symbol:
+        if ch == "DNSE_asset":
             if is_topprice_asset(content):
                 topprice_buf[symbol] = content_to_row_topprice(content)
             elif is_info_asset(content):
                 info_buf[symbol] = content_to_row_info(content)
-        elif fn == "indices" and symbol:
+
+        elif ch == "DNSE_indices":
             indices_buf[symbol] = content_to_row_indices(content)
 
         processed += 1
