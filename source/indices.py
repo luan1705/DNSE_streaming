@@ -130,12 +130,13 @@ def fmt_time_z_to_minute(ts: str) -> str | None:
 def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload)
-        sym = data.get("indexName")  # VD: VN100
+        s = data.get("indexName")  # VD: VN100
+        sym = "HNXINDEX" if s == "HNX" else "UPCOMINDEX" if s == "UPCOM" else s
         time=fmt_time_z_to_minute(data.get("transactTime") or "")
 
         result ={
                 "symbol": sym,
-                "time:": time,
+                "time": time,
                 "point": float(data.get("valueIndexes") or 0),
                 "refPoint": float(data.get("priorValueIndexes") or 0),
                 "change": float(round(data.get("changedValue"), 2) or 0) if data.get("changedValue") is not None else 0,

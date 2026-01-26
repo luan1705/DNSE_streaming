@@ -3,10 +3,10 @@ services:
 #=============================================PRODUCER================================================
 #---------------------------------------------EBOARD TABLE------------------------------------------------
   eboardinfo:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-    image:  luan1705/dnse_k8s:v1.0  #dnse_streaming:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image:  dnse_streaming:latest  #dnse_streaming:latest
     container_name: eboardinfo
     command: python3 source/eboard_info.py
     networks:

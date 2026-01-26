@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 # ENV
 # ======================
 REDIS_URL = os.getenv("REDIS_URL", "redis://default:%40Vns123456@videv.cloud:6379/1")
-DB_URL    = os.getenv("DB_URL", "postgresql+psycopg2://vnsfintech:%40Vns123456@videv.cloud:5432/vnsfintech")
+DB_URL    = os.getenv("DB_URL", "postgresql+psycopg2://vnsfintech:Vns_123456@videv.cloud:5433/vnsfintech")
 
 FLUSH_INTERVAL_MS = int(os.getenv("FLUSH_INTERVAL_MS", "200"))
 MAX_BUFFER_SIZE   = int(os.getenv("MAX_BUFFER_SIZE", "5000"))
@@ -47,21 +47,21 @@ engine = create_engine(
 )
 
 md = MetaData()
-asset      = Table("asset", md, schema="DNSE_stream", autoload_with=engine)
-indices_tbl = Table("indices", md, schema="DNSE_stream", autoload_with=engine)
+asset      = Table("dnse_asset", md, schema="details", autoload_with=engine)
+indices_tbl = Table("dnse_vietnam", md, schema="indices", autoload_with=engine)
 
 # ======================
 # SQL
 # ======================
 SQL_ENSURE_ASSET = text("""
-    INSERT INTO "DNSE_stream".asset(symbol)
+    INSERT INTO "details".dnse_asset(symbol)
     VALUES (:symbol)
     ON CONFLICT (symbol) DO NOTHING
 """)
 
 # INFO snapshot (flat)
 SQL_UPDATE_INFO = text("""
-    UPDATE "DNSE_stream".asset
+    UPDATE "details".dnse_asset
     SET
       "ceiling"  = COALESCE(:ceiling, "ceiling"),
       "floor"    = COALESCE(:floor, "floor"),
@@ -90,7 +90,7 @@ SQL_UPDATE_INFO = text("""
 
 # TOPPRICE orderbook (flat)
 SQL_UPDATE_TOPPRICE = text("""
-    UPDATE "DNSE_stream".asset
+    UPDATE "details".dnse_asset
     SET
       "buyPrice1" = :buyPrice1, "buyVol1" = :buyVol1,
       "buyPrice2" = :buyPrice2, "buyVol2" = :buyVol2,
