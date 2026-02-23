@@ -182,6 +182,10 @@ def content_to_row_indices(content: dict) -> dict:
 
         "ceiling": content.get("ceiling"),
         "floor": content.get("floor"),
+        "open": content.get("open"),
+        "high": content.get("high"),
+        "low": content.get("low"),
+        "close": content.get("close"),
     }
 
 # ======================

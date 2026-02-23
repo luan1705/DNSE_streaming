@@ -161,6 +161,8 @@ def on_message(client, userdata, msg):
 
                 "ceiling": float(data.get("fluctuationUpperLimitIssueCount") or 0),
                 "floor": float(data.get("fluctuationLowerLimitIssueCount") or 0),
+                "high": float(data.get("highestValueIndexes") or 0),
+                "low": float(data.get("lowestValueIndexes") or 0),
             }
         # Publish result sang Redis để Hub gom về 1 WS port
         publish(result)
