@@ -12,7 +12,7 @@ from List.indice import indice
 # =========================================
 
 # ---------- Cấu hình qua ENV ----------
-REDIS_URL   = "redis://default:%40Vns123456@videv.cloud:6379/1"
+REDIS_URL   = "redis://default:%40Vns123456@tanhungsoft.com:6379/1"
 CHANNEL = "DNSE_indices"
 # --------------------------------------
 

@@ -12,7 +12,7 @@ from List.exchange import x10_list,still_list
 # =========================================
 
 # ---------- Cấu hình qua ENV ----------
-REDIS_URL   = "redis://default:%40Vns123456@videv.cloud:6379/1"
+REDIS_URL   = "redis://default:%40Vns123456@tanhungsoft.com:6379/1"
 CHANNEL = "DNSE_asset"
 # --------------------------------------
 

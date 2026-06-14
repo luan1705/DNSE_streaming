@@ -12,7 +12,7 @@ logging.basicConfig(
 
 # ============ DB ============
 engine = create_engine(
-    "postgresql+psycopg2://vnsfintech:Vns_123456@videv.cloud:5433/vnsfintech",
+    "postgresql+psycopg2://vnsfintech:Vns_123456@tanhungsoft.com:5433/vnsfintech",
     echo=False,
     pool_pre_ping=True,
 )

@@ -12,8 +12,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 # ======================
 # ENV
 # ======================
-REDIS_URL = os.getenv("REDIS_URL", "redis://default:%40Vns123456@videv.cloud:6379/1")
-DB_URL    = os.getenv("DB_URL", "postgresql+psycopg2://vnsfintech:Vns_123456@videv.cloud:5433/vnsfintech")
+REDIS_URL = os.getenv("REDIS_URL", "redis://default:%40Vns123456@tanhungsoft.com:6379/1")
+DB_URL    = os.getenv("DB_URL", "postgresql+psycopg2://vnsfintech:Vns_123456@tanhungsoft.com:5433/vnsfintech")
 
 FLUSH_INTERVAL_MS = int(os.getenv("FLUSH_INTERVAL_MS", "200"))
 MAX_BUFFER_SIZE   = int(os.getenv("MAX_BUFFER_SIZE", "5000"))
