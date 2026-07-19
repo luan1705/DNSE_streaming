@@ -1,0 +1,389 @@
+# ===================== BASE CONFIG =====================
+x-base-1: &base-1
+  build: .
+  restart: always
+  env_file: .env
+  command: python3 1/stock.py
+  environment:
+    TZ: Asia/Ho_Chi_Minh
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - /etc/timezone:/etc/timezone:ro
+    - ./List/exchange.py:/app/List/exchange.py
+
+x-base-1d: &base-1d
+  build: .
+  restart: always
+  env_file: .env
+  command: python3 1D/stock.py
+  environment:
+    TZ: Asia/Ho_Chi_Minh
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - /etc/timezone:/etc/timezone:ro
+    - ./List/exchange.py:/app/List/exchange.py
+
+services:
+
+  # ===================== HNX 1 =====================
+  hnx1_1:
+    <<: *base-1
+    container_name: chart_hnx1_1
+    environment:
+      SYMBOL_NAME: HNX1
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx2_1:
+    <<: *base-1
+    container_name: chart_hnx2_1
+    environment:
+      SYMBOL_NAME: HNX2
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx3_1:
+    <<: *base-1
+    container_name: chart_hnx3_1
+    environment:
+      SYMBOL_NAME: HNX3
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx4_1:
+    <<: *base-1
+    container_name: chart_hnx4_1
+    environment:
+      SYMBOL_NAME: HNX4
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx5_1:
+    <<: *base-1
+    container_name: chart_hnx5_1
+    environment:
+      SYMBOL_NAME: HNX5
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx6_1:
+    <<: *base-1
+    container_name: chart_hnx6_1
+    environment:
+      SYMBOL_NAME: HNX6
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx7_1:
+    <<: *base-1
+    container_name: chart_hnx7_1
+    environment:
+      SYMBOL_NAME: HNX7
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx8_1:
+    <<: *base-1
+    container_name: chart_hnx8_1
+    environment:
+      SYMBOL_NAME: HNX8
+      TZ: Asia/Ho_Chi_Minh
+
+  # ===================== HOSE 1 =====================
+  hose1_1:
+    <<: *base-1
+    container_name: chart_hose1_1
+    environment:
+      SYMBOL_NAME: HOSE1
+      TZ: Asia/Ho_Chi_Minh
+
+  hose2_1:
+    <<: *base-1
+    container_name: chart_hose2_1
+    environment:
+      SYMBOL_NAME: HOSE2
+      TZ: Asia/Ho_Chi_Minh
+
+  hose3_1:
+    <<: *base-1
+    container_name: chart_hose3_1
+    environment:
+      SYMBOL_NAME: HOSE3
+      TZ: Asia/Ho_Chi_Minh
+
+  hose4_1:
+    <<: *base-1
+    container_name: chart_hose4_1
+    environment:
+      SYMBOL_NAME: HOSE4
+      TZ: Asia/Ho_Chi_Minh
+
+  hose5_1:
+    <<: *base-1
+    container_name: chart_hose5_1
+    environment:
+      SYMBOL_NAME: HOSE5
+      TZ: Asia/Ho_Chi_Minh
+
+  hose6_1:
+    <<: *base-1
+    container_name: chart_hose6_1
+    environment:
+      SYMBOL_NAME: HOSE6
+      TZ: Asia/Ho_Chi_Minh
+
+  hose7_1:
+    <<: *base-1
+    container_name: chart_hose7_1
+    environment:
+      SYMBOL_NAME: HOSE7
+      TZ: Asia/Ho_Chi_Minh
+
+  hose8_1:
+    <<: *base-1
+    container_name: chart_hose8_1
+    environment:
+      SYMBOL_NAME: HOSE8
+      TZ: Asia/Ho_Chi_Minh
+
+  hose9_1:
+    <<: *base-1
+    container_name: chart_hose9_1
+    environment:
+      SYMBOL_NAME: HOSE9
+      TZ: Asia/Ho_Chi_Minh
+
+  hose10_1:
+    <<: *base-1
+    container_name: chart_hose10_1
+    environment:
+      SYMBOL_NAME: HOSE10
+      TZ: Asia/Ho_Chi_Minh
+
+  # ===================== UPCOM 1 =====================
+  upcom1_1:
+    <<: *base-1
+    container_name: chart_upcom1_1
+    environment:
+      SYMBOL_NAME: UPCOM1
+      TZ: Asia/Ho_Chi_Minh
+
+  upcom2_1:
+    <<: *base-1
+    container_name: chart_upcom2_1
+    environment:
+      SYMBOL_NAME: UPCOM2
+      TZ: Asia/Ho_Chi_Minh
+
+  upcom3_1:
+    <<: *base-1
+    container_name: chart_upcom3_1
+    environment:
+      SYMBOL_NAME: UPCOM3
+      TZ: Asia/Ho_Chi_Minh
+
+  upcom4_1:
+    <<: *base-1
+    container_name: chart_upcom4_1
+    environment:
+      SYMBOL_NAME: UPCOM4
+      TZ: Asia/Ho_Chi_Minh
+
+  # ===================== HNX 1D =====================
+  hnx1_1d:
+    <<: *base-1d
+    container_name: chart_hnx1_1d
+    environment:
+      SYMBOL_NAME: HNX1
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx2_1d:
+    <<: *base-1d
+    container_name: chart_hnx2_1d
+    environment:
+      SYMBOL_NAME: HNX2
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx3_1d:
+    <<: *base-1d
+    container_name: chart_hnx3_1d
+    environment:
+      SYMBOL_NAME: HNX3
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx4_1d:
+    <<: *base-1d
+    container_name: chart_hnx4_1d
+    environment:
+      SYMBOL_NAME: HNX4
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx5_1d:
+    <<: *base-1d
+    container_name: chart_hnx5_1d
+    environment:
+      SYMBOL_NAME: HNX5
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx6_1d:
+    <<: *base-1d
+    container_name: chart_hnx6_1d
+    environment:
+      SYMBOL_NAME: HNX6
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx7_1d:
+    <<: *base-1d
+    container_name: chart_hnx7_1d
+    environment:
+      SYMBOL_NAME: HNX7
+      TZ: Asia/Ho_Chi_Minh
+
+  hnx8_1d:
+    <<: *base-1d
+    container_name: chart_hnx8_1d
+    environment:
+      SYMBOL_NAME: HNX8
+      TZ: Asia/Ho_Chi_Minh
+
+  # ===================== HOSE 1D =====================
+  hose1_1d:
+    <<: *base-1d
+    container_name: chart_hose1_1d
+    environment:
+      SYMBOL_NAME: HOSE1
+      TZ: Asia/Ho_Chi_Minh
+
+  hose2_1d:
+    <<: *base-1d
+    container_name: chart_hose2_1d
+    environment:
+      SYMBOL_NAME: HOSE2
+      TZ: Asia/Ho_Chi_Minh
+
+  hose3_1d:
+    <<: *base-1d
+    container_name: chart_hose3_1d
+    environment:
+      SYMBOL_NAME: HOSE3
+      TZ: Asia/Ho_Chi_Minh
+
+  hose4_1d:
+    <<: *base-1d
+    container_name: chart_hose4_1d
+    environment:
+      SYMBOL_NAME: HOSE4
+      TZ: Asia/Ho_Chi_Minh
+
+  hose5_1d:
+    <<: *base-1d
+    container_name: chart_hose5_1d
+    environment:
+      SYMBOL_NAME: HOSE5
+      TZ: Asia/Ho_Chi_Minh
+
+  hose6_1d:
+    <<: *base-1d
+    container_name: chart_hose6_1d
+    environment:
+      SYMBOL_NAME: HOSE6
+      TZ: Asia/Ho_Chi_Minh
+
+  hose7_1d:
+    <<: *base-1d
+    container_name: chart_hose7_1d
+    environment:
+      SYMBOL_NAME: HOSE7
+      TZ: Asia/Ho_Chi_Minh
+
+  hose8_1d:
+    <<: *base-1d
+    container_name: chart_hose8_1d
+    environment:
+      SYMBOL_NAME: HOSE8
+      TZ: Asia/Ho_Chi_Minh
+
+  hose9_1d:
+    <<: *base-1d
+    container_name: chart_hose9_1d
+    environment:
+      SYMBOL_NAME: HOSE9
+      TZ: Asia/Ho_Chi_Minh
+
+  hose10_1d:
+    <<: *base-1d
+    container_name: chart_hose10_1d
+    environment:
+      SYMBOL_NAME: HOSE10
+      TZ: Asia/Ho_Chi_Minh
+
+  # ===================== UPCOM 1D =====================
+  upcom1_1d:
+    <<: *base-1d
+    container_name: chart_upcom1_1d
+    environment:
+      SYMBOL_NAME: UPCOM1
+      TZ: Asia/Ho_Chi_Minh
+
+  upcom2_1d:
+    <<: *base-1d
+    container_name: chart_upcom2_1d
+    environment:
+      SYMBOL_NAME: UPCOM2
+      TZ: Asia/Ho_Chi_Minh
+
+  upcom3_1d:
+    <<: *base-1d
+    container_name: chart_upcom3_1d
+    environment:
+      SYMBOL_NAME: UPCOM3
+      TZ: Asia/Ho_Chi_Minh
+
+  upcom4_1d:
+    <<: *base-1d
+    container_name: chart_upcom4_1d
+    environment:
+      SYMBOL_NAME: UPCOM4
+      TZ: Asia/Ho_Chi_Minh
+
+  # ===================== DERIVATIVES & INDICE =====================
+  chart_derivatives_1:
+    build: .
+    container_name: chart_derivatives_1
+    command: python3 1/derivatives.py
+    restart: always
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./List/exchange.py:/app/List/exchange.py
+
+  chart_indice_1:
+    build: .
+    container_name: chart_indice_1
+    command: python3 1/indice.py
+    restart: always
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./List/exchange.py:/app/List/exchange.py
+
+  chart_derivatives_1d:
+    build: .
+    container_name: chart_derivatives_1d
+    command: python3 1D/derivatives.py
+    restart: always
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./List/exchange.py:/app/List/exchange.py
+
+  chart_indice_1d:
+    build: .
+    container_name: chart_indice_1d
+    command: python3 1D/indice.py
+    restart: always
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./List/exchange.py:/app/List/exchange.py

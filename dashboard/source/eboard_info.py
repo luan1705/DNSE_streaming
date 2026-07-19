@@ -8,7 +8,14 @@ import ssl
 from requests import post, get
 
 # ====== IMPORTS THEO DỰ ÁN CỦA BẠN ======
-from List.exchange import x10_list,still_list
+from List.exchange import HOSE1, HOSE2, HOSE3, HOSE4, HOSE5, HOSE6, HOSE7, HOSE8, HOSE9, HOSE10, \
+    HNX1, HNX2, HNX3, HNX4, HNX5, HNX6, HNX7, HNX8, \
+    UPCOM1, UPCOM2, UPCOM3, UPCOM4, CW, ETFHOSE, DERIVATIVES, HNXBOND
+
+x10_list = HOSE1 + HOSE2 + HOSE3 + HOSE4 + HOSE5 + HOSE6 + HOSE7 + HOSE8 + HOSE9 + HOSE10 + \
+           HNX1 + HNX2 + HNX3 + HNX4 + HNX5 + HNX6 + HNX7 + HNX8 + \
+           UPCOM1 + UPCOM2 + UPCOM3 + UPCOM4 + CW + ETFHOSE
+still_list = DERIVATIVES + HNXBOND
 # =========================================
 
 # ---------- Cấu hình qua ENV ----------
