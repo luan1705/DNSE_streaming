@@ -25,9 +25,9 @@ username = "064CCS7GUK"
 password = "199204@Vie"
 DB_URL = "postgresql://root:Dnl_123456@tanhungsoft.com:5432/dnl"
 SCHEMA = "ohlcv"
-RESOLUTION = "1D"
+RESOLUTION = "1"
 REDIS_URL = "redis://root:Dnl_123456@tanhungsoft.com:6379"
-REDIS_CHANNEL = "ohlcv_1d"
+REDIS_CHANNEL = "ohlcv_1"
 
 engine = create_engine(DB_URL)
 redis_client = redis.Redis.from_url(REDIS_URL)
@@ -49,14 +49,22 @@ def normalize_symbol(symbol):
     s = symbol.strip().upper().replace(" ", "")
     return special_map.get(s, s)
 
-def upsert_1d(symbol, data):
+def is_trading_time_vn():
+    now = datetime.now(VN_TZ)
+    hm = now.hour + now.minute / 60
+    if hm < 9 + 15/60 or 11.5 <= hm < 13 or hm > 14.75:
+        return False
+    return True
+
+def upsert_1m(symbol, data):
     try:
+        symbol = normalize_symbol(symbol)
         ts = int(data.get("time") or data.get("timestamp"))
         if ts > 10000000000:
             ts = ts / 1000
-        time_vn = datetime.fromtimestamp(ts).replace(tzinfo=VN_TZ).replace(hour=15, minute=0, second=0, microsecond=0)
+        time_vn = datetime.fromtimestamp(ts).replace(tzinfo=VN_TZ).replace(second=0, microsecond=0)
         time_vn_str = time_vn.strftime("%Y-%m-%d %H:%M:%S")
-        table = f'"{SCHEMA}"."{symbol.upper()}_1D"'
+        table = f'"{SCHEMA}"."{symbol}_1"'
         with engine.begin() as conn:
             conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{SCHEMA}";'))
             conn.execute(text(f"""
@@ -73,7 +81,7 @@ def upsert_1d(symbol, data):
                     open=EXCLUDED.open, close=EXCLUDED.close,
                     high=EXCLUDED.high, low=EXCLUDED.low, volume=EXCLUDED.volume;
             """), {
-                "symbol": symbol.upper(), "time": time_vn,
+                "symbol": symbol, "time": time_vn,
                 "open": float(data.get("open", 0)), "close": float(data.get("close", 0)),
                 "high": float(data.get("high", 0)), "low": float(data.get("low", 0)),
                 "volume": int(data.get("volume", 0))
@@ -100,7 +108,7 @@ investor_id = get_investor_info(token)["investorId"]
 
 BROKER_HOST = "datafeed-lts-krx.dnse.com.vn"
 BROKER_PORT = 443
-client = mqtt.Client(client_id=f"dnse-ohlc-index-1d-{randint(1000,9999)}", protocol=mqtt.MQTTv311, transport="websockets")
+client = mqtt.Client(client_id=f"dnse-ohlc-index-1m-{randint(1000,9999)}", protocol=mqtt.MQTTv311, transport="websockets")
 client.username_pw_set(investor_id, token)
 client.tls_set(cert_reqs=ssl.CERT_NONE)
 client.tls_insecure_set(True)
@@ -117,6 +125,8 @@ def on_connect(client, userdata, flags, rc, properties=None):
 
 def on_message(client, userdata, msg):
     try:
+        if not is_trading_time_vn():
+            return
         data = json.loads(msg.payload.decode())
         symbol = data.get("symbol")
         if not symbol:
@@ -125,13 +135,13 @@ def on_message(client, userdata, msg):
         ts = int(data["time"])
         if ts > 10000000000:
             ts = ts / 1000
-        time_vn = datetime.fromtimestamp(ts).replace(tzinfo=VN_TZ).replace(hour=15, minute=0, second=0, microsecond=0)
+        time_vn = datetime.fromtimestamp(ts).replace(tzinfo=VN_TZ).replace(second=0, microsecond=0)
         time_vn_str = time_vn.strftime("%Y-%m-%d %H:%M:%S")
-        upsert_1d(norm_symbol, data)
+        upsert_1m(norm_symbol, data)
         redis_client.publish(REDIS_CHANNEL, json.dumps({
-            "function": "chart_1d", "symbol": norm_symbol, "time": time_vn_str,
-            "open": float(data.get("open", 0)), "close": float(data.get("close", 0)),
-            "high": float(data.get("high", 0)), "low": float(data.get("low", 0)),
+            "function": "chart_1m", "symbol": norm_symbol, "time": time_vn_str,
+            "open": data.get("open"), "close": data.get("close"),
+            "high": data.get("high"), "low": data.get("low"),
             "volume": float(data.get("volume", 0))
         }))
     except Exception as e:
