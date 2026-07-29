@@ -1,14 +1,10 @@
 import json
-import logging
-import os
-import queue
 import ssl
 import threading
 import time
-
-from datetime import datetime
-from random import randint
-from zoneinfo import ZoneInfo
+import logging
+import queue
+import os
 
 import paho.mqtt.client as mqtt
 import redis
@@ -16,6 +12,10 @@ import redis
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from random import randint
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from sqlalchemy import create_engine, text
 
 
@@ -24,7 +24,7 @@ from sqlalchemy import create_engine, text
 # ==================================================
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(message)s",
+    format="%(asctime)s %(levelname)s %(message)s"
 )
 
 
@@ -35,29 +35,17 @@ VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 
 
 # ==================================================
-# DERIVATIVES
+# INDEX LIST
 # ==================================================
-DERIVATIVES = [
-    "VN30F1M",
-    "VN30F2M",
-    "VN30F1Q",
-    "VN30F2Q",
-    "V100F1M",
-    "V100F2M",
-    "V100F1Q",
-    "V100F2Q",
+INDEX_LIST = [
+    "VNINDEX",
+    "VN30",
+    "HNX",
+    "HNX30",
+    "UPCOM",
+    "VNXAllShare",
+    "VN100",
 ]
-
-MAP_DERIVATIVE = {
-    "VN30F1M": "41I1FB000",
-    "VN30F2M": "VN30F2512",
-    "VN30F1Q": "41I1G3000",
-    "VN30F2Q": "41I1G6000",
-    "V100F1M": "41I2FB000",
-    "V100F2M": "41I2FC000",
-    "V100F1Q": "41I2G3000",
-    "V100F2Q": "41I2G6000",
-}
 
 
 # ==================================================
@@ -68,17 +56,35 @@ PASSWORD = os.getenv("DNSE_PASSWORD", "199204@Vie")
 
 DB_URL = os.getenv(
     "DB_URL",
-    "postgresql://root:Dnl_123456@tanhungsoft.com:5432/dnl",
+    "postgresql://root:Dnl_123456@tanhungsoft.com:5432/dnl"
 )
 SCHEMA = os.getenv("DB_SCHEMA", "ohlcv")
 
 REDIS_URL = os.getenv(
     "REDIS_URL",
-    "redis://root:Dnl_123456@tanhungsoft.com:6379",
+    "redis://root:Dnl_123456@tanhungsoft.com:6379"
 )
-REDIS_CHANNEL = os.getenv("REDIS_CHANNEL", "ohlcv_1d")
+REDIS_CHANNEL = os.getenv("REDIS_CHANNEL", "ohlcv_1")
 
-RESOLUTION = "1D"
+RESOLUTION = "1"
+
+
+# ==================================================
+# SYMBOL MAP
+# ==================================================
+special_map = {
+    "HNX": "HNXINDEX",
+    "UPCOM": "UPCOMINDEX",
+    "VNINDEX": "VNINDEX",
+    "VNXALLSHARE": "VNXALLSHARE",
+    "VNALLSHARE": "VNXALLSHARE",
+    "HNX30": "HNX30",
+}
+
+
+def normalize_symbol(symbol):
+    s = symbol.strip().upper().replace(" ", "")
+    return special_map.get(s, s)
 
 
 # ==================================================
@@ -144,12 +150,10 @@ def create_redis():
         timeout=1.0,
     )
 
-    return redis.Redis(
-        connection_pool=redis_pool
-    )
+    return redis.Redis(connection_pool=redis_pool)
 
 
-def reconnect_redis() -> bool:
+def reconnect_redis():
     global redis_client
 
     with redis_lock:
@@ -163,34 +167,21 @@ def reconnect_redis() -> bool:
             return True
 
         except Exception as e:
-            logging.error(
-                "[REDIS] Reconnect failed: %s",
-                e,
-            )
+            logging.error("[REDIS] Reconnect failed: %s", e)
             return False
 
 
-def publish_redis(
-    payload: dict,
-    channel: str = REDIS_CHANNEL,
-) -> bool:
-    data = json.dumps(
-        payload,
-        ensure_ascii=False,
-    )
+def publish_redis(payload, channel=REDIS_CHANNEL):
+    data = json.dumps(payload, ensure_ascii=False)
 
     for attempt in range(1, 4):
         try:
-            redis_client.publish(
-                channel,
-                data,
-            )
+            redis_client.publish(channel, data)
             return True
 
         except Exception as e:
             logging.warning(
-                "[REDIS PUBLISH] Failed | "
-                "channel=%s | attempt=%d/3 | error=%s",
+                "[REDIS PUBLISH] Failed | channel=%s | attempt=%d/3 | error=%s",
                 channel,
                 attempt,
                 e,
@@ -202,9 +193,7 @@ def publish_redis(
                 time.sleep(1)
 
     logging.error(
-        "[REDIS PUBLISH] Give up | "
-        "channel=%s | restarting process...",
-        channel,
+        "[REDIS PUBLISH] Give up | restarting process..."
     )
 
     os._exit(1)
@@ -214,12 +203,10 @@ redis_client = create_redis()
 
 try:
     redis_client.ping()
-
     logging.info(
         "Connected Redis | channel=%s",
         REDIS_CHANNEL,
     )
-
 except Exception as e:
     logging.error(
         "Initial Redis connection failed: %s",
@@ -238,16 +225,16 @@ def is_trading_time_vn():
     hm = now.hour + now.minute / 60
 
     return not (
-        hm < 9
+        hm < 9 + 15 / 60
         or 11.5 <= hm < 13
         or hm > 14.75
     )
 
 
 # ==================================================
-# UPSERT 1D
+# UPSERT 1 MINUTE
 # ==================================================
-def upsert_1d(symbol, data):
+def upsert_1m(symbol, data):
     ts = int(data.get("time") or data.get("timestamp"))
 
     if ts > 10_000_000_000:
@@ -257,64 +244,53 @@ def upsert_1d(symbol, data):
         ts,
         tz=VN_TZ,
     ).replace(
-        hour=15,
-        minute=0,
         second=0,
         microsecond=0,
     )
 
-    table = f'"{SCHEMA}"."{symbol.upper()}_1D"'
+    table = f'"{SCHEMA}"."{symbol}_1"'
 
     with engine.begin() as conn:
         conn.execute(
             text(f'CREATE SCHEMA IF NOT EXISTS "{SCHEMA}";')
         )
 
-        conn.execute(
-            text(
-                f"""
-                CREATE TABLE IF NOT EXISTS {table} (
-                    symbol TEXT,
-                    time TIMESTAMP WITH TIME ZONE PRIMARY KEY,
-                    open DOUBLE PRECISION,
-                    close DOUBLE PRECISION,
-                    high DOUBLE PRECISION,
-                    low DOUBLE PRECISION,
-                    volume BIGINT
-                );
-                """
-            )
-        )
+        conn.execute(text(f"""
+            CREATE TABLE IF NOT EXISTS {table} (
+                symbol TEXT,
+                time TIMESTAMPTZ PRIMARY KEY,
+                open DOUBLE PRECISION,
+                close DOUBLE PRECISION,
+                high DOUBLE PRECISION,
+                low DOUBLE PRECISION,
+                volume BIGINT
+            );
+        """))
 
-        conn.execute(
-            text(
-                f"""
-                INSERT INTO {table}
-                    (symbol, time, open, close, high, low, volume)
-                VALUES
-                    (:symbol, :time, :open, :close, :high, :low, :volume)
-                ON CONFLICT (time) DO UPDATE SET
-                    open = EXCLUDED.open,
-                    close = EXCLUDED.close,
-                    high = EXCLUDED.high,
-                    low = EXCLUDED.low,
-                    volume = EXCLUDED.volume;
-                """
-            ),
-            {
-                "symbol": symbol.upper(),
-                "time": time_vn,
-                "open": float(data.get("open") or 0),
-                "close": float(data.get("close") or 0),
-                "high": float(data.get("high") or 0),
-                "low": float(data.get("low") or 0),
-                "volume": int(data.get("volume") or 0),
-            },
-        )
+        conn.execute(text(f"""
+            INSERT INTO {table}
+                (symbol, time, open, close, high, low, volume)
+            VALUES
+                (:symbol, :time, :open, :close, :high, :low, :volume)
+            ON CONFLICT (time) DO UPDATE SET
+                open = EXCLUDED.open,
+                close = EXCLUDED.close,
+                high = EXCLUDED.high,
+                low = EXCLUDED.low,
+                volume = EXCLUDED.volume;
+        """), {
+            "symbol": symbol,
+            "time": time_vn,
+            "open": float(data.get("open") or 0),
+            "close": float(data.get("close") or 0),
+            "high": float(data.get("high") or 0),
+            "low": float(data.get("low") or 0),
+            "volume": int(data.get("volume") or 0),
+        })
 
 
 # ==================================================
-# DB WORKER
+# DATABASE WORKER
 # ==================================================
 db_queue = queue.Queue(maxsize=10_000)
 
@@ -324,9 +300,13 @@ def db_worker():
         symbol, data = db_queue.get()
 
         try:
-            upsert_1d(symbol, data)
+            upsert_1m(symbol, data)
         except Exception as e:
-            logging.error("[DB err] %s: %s", symbol, e)
+            logging.error(
+                "[DB err] %s: %s",
+                symbol,
+                e,
+            )
         finally:
             db_queue.task_done()
 
@@ -376,7 +356,7 @@ investor_id = get_investor_id(token)
 # MQTT
 # ==================================================
 client = mqtt.Client(
-    client_id=f"dnse-ohlc-derivatives-1d-{randint(1000, 9999)}",
+    client_id=f"dnse-ohlc-index-1m-{randint(1000, 9999)}",
     protocol=mqtt.MQTTv311,
     transport="websockets",
     clean_session=True,
@@ -389,42 +369,41 @@ client.ws_set_options(path="/wss")
 
 
 def on_connect(client, userdata, flags, rc, properties=None):
-    if rc != 0:
-        logging.error("MQTT connect failed: %s", rc)
-        return
+    if rc == 0:
+        logging.info("Connected MQTT")
 
-    logging.info("Connected MQTT")
+        for sym in INDEX_LIST:
+            topic_symbol = sym.replace(" ", "")
 
-    for symbol in DERIVATIVES:
-        client.subscribe(
-            (
-                "plaintext/quotes/krx/mdds/v2/ohlc/"
-                f"derivative/{RESOLUTION}/{symbol}"
-            ),
-            qos=1,
+            client.subscribe(
+                (
+                    "plaintext/quotes/krx/mdds/v2/ohlc/"
+                    f"index/{RESOLUTION}/{topic_symbol}"
+                ),
+                qos=1,
+            )
+
+        logging.info(
+            "Subscribed: %s",
+            ", ".join(INDEX_LIST),
         )
-
-    logging.info("Subscribed: %s", ", ".join(DERIVATIVES))
+    else:
+        logging.error(
+            "MQTT connect failed: %s",
+            rc,
+        )
 
 
 def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload.decode())
-        raw_symbol = data.get("symbol")
+        symbol = data.get("symbol")
 
-        if not raw_symbol or not is_trading_time_vn():
+        if not symbol or not is_trading_time_vn():
             return
 
-        mapped_symbol = MAP_DERIVATIVE.get(raw_symbol)
+        norm_symbol = normalize_symbol(symbol)
 
-        if not mapped_symbol:
-            logging.warning(
-                "No mapped derivative for symbol %s",
-                raw_symbol,
-            )
-            return
-
-        # Giữ time của nến 1D ở 15:00
         ts = int(data.get("time") or data.get("timestamp"))
 
         if ts > 10_000_000_000:
@@ -434,36 +413,31 @@ def on_message(client, userdata, msg):
             ts,
             tz=VN_TZ,
         ).replace(
-            hour=15,
-            minute=0,
             second=0,
             microsecond=0,
         )
 
-        time_vn_str = time_vn.strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-
         payload = {
-            "function": "chart_1d",
-            "symbol": mapped_symbol.upper(),
-            "time": time_vn_str,
+            "function": "chart_1m",
+            "symbol": norm_symbol,
+            "time": time_vn.strftime("%Y-%m-%d %H:%M:%S"),
             "open": float(data.get("open") or 0),
             "close": float(data.get("close") or 0),
             "high": float(data.get("high") or 0),
             "low": float(data.get("low") or 0),
             "volume": float(data.get("volume") or 0),
-            "exchange": "DERIVATIVE",
+            "exchange": "INDEX",
         }
 
+        # Ghi PostgreSQL bất đồng bộ
         try:
             db_queue.put_nowait(
-                (mapped_symbol, data)
+                (norm_symbol, data)
             )
         except queue.Full:
             logging.warning(
                 "[db-queue-full] dropped %s",
-                mapped_symbol,
+                norm_symbol,
             )
         
         publish_redis(

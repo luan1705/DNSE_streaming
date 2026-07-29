@@ -1,14 +1,10 @@
 import json
-import logging
-import os
-import queue
 import ssl
 import threading
 import time
-
-from datetime import datetime
-from random import randint
-from zoneinfo import ZoneInfo
+import logging
+import queue
+import os
 
 import paho.mqtt.client as mqtt
 import redis
@@ -16,6 +12,10 @@ import redis
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from random import randint
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from sqlalchemy import create_engine, text
 
 
@@ -37,7 +37,7 @@ VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 # ==================================================
 # DERIVATIVES
 # ==================================================
-DERIVATIVES = [
+derivatives = [
     "VN30F1M",
     "VN30F2M",
     "VN30F1Q",
@@ -48,7 +48,7 @@ DERIVATIVES = [
     "V100F2Q",
 ]
 
-MAP_DERIVATIVE = {
+map_derivative = {
     "VN30F1M": "41I1FB000",
     "VN30F2M": "VN30F2512",
     "VN30F1Q": "41I1G3000",
@@ -70,15 +70,17 @@ DB_URL = os.getenv(
     "DB_URL",
     "postgresql://root:Dnl_123456@tanhungsoft.com:5432/dnl",
 )
+
 SCHEMA = os.getenv("DB_SCHEMA", "ohlcv")
 
 REDIS_URL = os.getenv(
     "REDIS_URL",
     "redis://root:Dnl_123456@tanhungsoft.com:6379",
 )
-REDIS_CHANNEL = os.getenv("REDIS_CHANNEL", "ohlcv_1d")
 
-RESOLUTION = "1D"
+REDIS_CHANNEL = os.getenv("REDIS_CHANNEL", "ohlcv_1")
+
+RESOLUTION = "1"
 
 
 # ==================================================
@@ -144,12 +146,10 @@ def create_redis():
         timeout=1.0,
     )
 
-    return redis.Redis(
-        connection_pool=redis_pool
-    )
+    return redis.Redis(connection_pool=redis_pool)
 
 
-def reconnect_redis() -> bool:
+def reconnect_redis():
     global redis_client
 
     with redis_lock:
@@ -163,34 +163,21 @@ def reconnect_redis() -> bool:
             return True
 
         except Exception as e:
-            logging.error(
-                "[REDIS] Reconnect failed: %s",
-                e,
-            )
+            logging.error("[REDIS] Reconnect failed: %s", e)
             return False
 
 
-def publish_redis(
-    payload: dict,
-    channel: str = REDIS_CHANNEL,
-) -> bool:
-    data = json.dumps(
-        payload,
-        ensure_ascii=False,
-    )
+def publish_redis(payload, channel=REDIS_CHANNEL):
+    data = json.dumps(payload, ensure_ascii=False)
 
     for attempt in range(1, 4):
         try:
-            redis_client.publish(
-                channel,
-                data,
-            )
+            redis_client.publish(channel, data)
             return True
 
         except Exception as e:
             logging.warning(
-                "[REDIS PUBLISH] Failed | "
-                "channel=%s | attempt=%d/3 | error=%s",
+                "[REDIS PUBLISH] Failed | channel=%s | attempt=%d/3 | error=%s",
                 channel,
                 attempt,
                 e,
@@ -202,9 +189,7 @@ def publish_redis(
                 time.sleep(1)
 
     logging.error(
-        "[REDIS PUBLISH] Give up | "
-        "channel=%s | restarting process...",
-        channel,
+        "[REDIS PUBLISH] Give up | restarting process..."
     )
 
     os._exit(1)
@@ -214,12 +199,10 @@ redis_client = create_redis()
 
 try:
     redis_client.ping()
-
     logging.info(
         "Connected Redis | channel=%s",
         REDIS_CHANNEL,
     )
-
 except Exception as e:
     logging.error(
         "Initial Redis connection failed: %s",
@@ -237,18 +220,20 @@ def is_trading_time_vn():
     now = datetime.now(VN_TZ)
     hm = now.hour + now.minute / 60
 
-    return not (
-        hm < 9
-        or 11.5 <= hm < 13
-        or hm > 14.75
+    if hm < 9 or 11.5 <= hm < 13 or hm > 14.75:
+        return False
+
+    return True
+
+
+# ==================================================
+# UPSERT 1 MINUTE
+# ==================================================
+def upsert_1m(mapped_symbol, data):
+    ts = int(
+        data.get("time")
+        or data.get("timestamp")
     )
-
-
-# ==================================================
-# UPSERT 1D
-# ==================================================
-def upsert_1d(symbol, data):
-    ts = int(data.get("time") or data.get("timestamp"))
 
     if ts > 10_000_000_000:
         ts //= 1000
@@ -257,38 +242,35 @@ def upsert_1d(symbol, data):
         ts,
         tz=VN_TZ,
     ).replace(
-        hour=15,
-        minute=0,
         second=0,
         microsecond=0,
     )
 
-    table = f'"{SCHEMA}"."{symbol.upper()}_1D"'
+    table = f'"{SCHEMA}"."{mapped_symbol.upper()}_1"'
 
     with engine.begin() as conn:
         conn.execute(
-            text(f'CREATE SCHEMA IF NOT EXISTS "{SCHEMA}";')
+            text(
+                f'CREATE SCHEMA IF NOT EXISTS "{SCHEMA}";'
+            )
         )
 
         conn.execute(
-            text(
-                f"""
+            text(f"""
                 CREATE TABLE IF NOT EXISTS {table} (
                     symbol TEXT,
-                    time TIMESTAMP WITH TIME ZONE PRIMARY KEY,
+                    time TIMESTAMPTZ PRIMARY KEY,
                     open DOUBLE PRECISION,
                     close DOUBLE PRECISION,
                     high DOUBLE PRECISION,
                     low DOUBLE PRECISION,
                     volume BIGINT
                 );
-                """
-            )
+            """)
         )
 
         conn.execute(
-            text(
-                f"""
+            text(f"""
                 INSERT INTO {table}
                     (symbol, time, open, close, high, low, volume)
                 VALUES
@@ -299,10 +281,9 @@ def upsert_1d(symbol, data):
                     high = EXCLUDED.high,
                     low = EXCLUDED.low,
                     volume = EXCLUDED.volume;
-                """
-            ),
+            """),
             {
-                "symbol": symbol.upper(),
+                "symbol": mapped_symbol.upper(),
                 "time": time_vn,
                 "open": float(data.get("open") or 0),
                 "close": float(data.get("close") or 0),
@@ -314,19 +295,28 @@ def upsert_1d(symbol, data):
 
 
 # ==================================================
-# DB WORKER
+# DATABASE WORKER
 # ==================================================
-db_queue = queue.Queue(maxsize=10_000)
+db_queue = queue.Queue(
+    maxsize=10_000,
+)
 
 
 def db_worker():
     while True:
-        symbol, data = db_queue.get()
+        mapped_symbol, data = db_queue.get()
 
         try:
-            upsert_1d(symbol, data)
+            upsert_1m(
+                mapped_symbol,
+                data,
+            )
         except Exception as e:
-            logging.error("[DB err] %s: %s", symbol, e)
+            logging.error(
+                "[DB err] %s: %s",
+                mapped_symbol,
+                e,
+            )
         finally:
             db_queue.task_done()
 
@@ -352,6 +342,7 @@ def authenticate(username, password):
     )
 
     response.raise_for_status()
+
     return response.json()["token"]
 
 
@@ -365,57 +356,98 @@ def get_investor_id(token):
     )
 
     response.raise_for_status()
+
     return response.json()["investorId"]
 
 
-token = authenticate(USERNAME, PASSWORD)
-investor_id = get_investor_id(token)
+token = authenticate(
+    USERNAME,
+    PASSWORD,
+)
+
+investor_id = get_investor_id(
+    token,
+)
 
 
 # ==================================================
 # MQTT
 # ==================================================
+BROKER_HOST = "datafeed-lts-krx.dnse.com.vn"
+BROKER_PORT = 443
+
 client = mqtt.Client(
-    client_id=f"dnse-ohlc-derivatives-1d-{randint(1000, 9999)}",
+    client_id=(
+        f"dnse-ohlc-derivatives-1m-"
+        f"{randint(1000, 9999)}"
+    ),
     protocol=mqtt.MQTTv311,
     transport="websockets",
     clean_session=True,
 )
 
-client.username_pw_set(investor_id, token)
-client.tls_set(cert_reqs=ssl.CERT_NONE)
+client.username_pw_set(
+    investor_id,
+    token,
+)
+
+client.tls_set(
+    cert_reqs=ssl.CERT_NONE,
+)
+
 client.tls_insecure_set(True)
 client.ws_set_options(path="/wss")
 
 
-def on_connect(client, userdata, flags, rc, properties=None):
-    if rc != 0:
-        logging.error("MQTT connect failed: %s", rc)
-        return
+def on_connect(
+    client,
+    userdata,
+    flags,
+    rc,
+    properties=None,
+):
+    if rc == 0:
+        logging.info("Connected MQTT")
 
-    logging.info("Connected MQTT")
+        for sym in derivatives:
+            client.subscribe(
+                (
+                    "plaintext/quotes/krx/mdds/v2/ohlc/"
+                    f"derivative/{RESOLUTION}/{sym}"
+                ),
+                qos=1,
+            )
 
-    for symbol in DERIVATIVES:
-        client.subscribe(
-            (
-                "plaintext/quotes/krx/mdds/v2/ohlc/"
-                f"derivative/{RESOLUTION}/{symbol}"
-            ),
-            qos=1,
+        logging.info(
+            "Subscribed: %s",
+            ", ".join(derivatives),
         )
 
-    logging.info("Subscribed: %s", ", ".join(DERIVATIVES))
+    else:
+        logging.error(
+            "MQTT connect failed: %s",
+            rc,
+        )
 
 
-def on_message(client, userdata, msg):
+def on_message(
+    client,
+    userdata,
+    msg,
+):
     try:
-        data = json.loads(msg.payload.decode())
+        data = json.loads(
+            msg.payload.decode()
+        )
+
         raw_symbol = data.get("symbol")
 
         if not raw_symbol or not is_trading_time_vn():
             return
 
-        mapped_symbol = MAP_DERIVATIVE.get(raw_symbol)
+        mapped_symbol = map_derivative.get(
+            raw_symbol
+        )
 
         if not mapped_symbol:
             logging.warning(
@@ -424,8 +456,10 @@ def on_message(client, userdata, msg):
             )
             return
 
-        # Giữ time của nến 1D ở 15:00
-        ts = int(data.get("time") or data.get("timestamp"))
+        ts = int(
+            data.get("time")
+            or data.get("timestamp")
+        )
 
         if ts > 10_000_000_000:
             ts //= 1000
@@ -434,38 +468,49 @@ def on_message(client, userdata, msg):
             ts,
             tz=VN_TZ,
         ).replace(
-            hour=15,
-            minute=0,
             second=0,
             microsecond=0,
         )
 
-        time_vn_str = time_vn.strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-
         payload = {
-            "function": "chart_1d",
+            "function": "chart_1m",
             "symbol": mapped_symbol.upper(),
-            "time": time_vn_str,
-            "open": float(data.get("open") or 0),
-            "close": float(data.get("close") or 0),
-            "high": float(data.get("high") or 0),
-            "low": float(data.get("low") or 0),
-            "volume": float(data.get("volume") or 0),
+            "time": time_vn.strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+            "open": float(
+                data.get("open") or 0
+            ),
+            "close": float(
+                data.get("close") or 0
+            ),
+            "high": float(
+                data.get("high") or 0
+            ),
+            "low": float(
+                data.get("low") or 0
+            ),
+            "volume": float(
+                data.get("volume") or 0
+            ),
             "exchange": "DERIVATIVE",
         }
 
+        # Ghi PostgreSQL bất đồng bộ
         try:
             db_queue.put_nowait(
-                (mapped_symbol, data)
+                (
+                    mapped_symbol,
+                    data,
+                )
             )
         except queue.Full:
             logging.warning(
                 "[db-queue-full] dropped %s",
                 mapped_symbol,
             )
-        
+
+        # Gửi realtime Pub/Sub
         publish_redis(
             payload,
             REDIS_CHANNEL,
@@ -482,8 +527,8 @@ client.on_connect = on_connect
 client.on_message = on_message
 
 client.connect_async(
-    "datafeed-lts-krx.dnse.com.vn",
-    443,
+    BROKER_HOST,
+    BROKER_PORT,
     keepalive=60,
 )
 
