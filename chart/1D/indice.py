@@ -67,6 +67,10 @@ REDIS_URL = os.getenv(
 REDIS_CHANNEL = os.getenv("REDIS_CHANNEL", "ohlcv_1d")
 
 RESOLUTION = "1D"
+LATEST_DNSE_KEY_PREFIX = os.getenv(
+    "LATEST_DNSE_KEY_PREFIX",
+    "latest_dnse_streaming_message_1D"
+)
 
 
 # ==================================================
@@ -330,6 +334,65 @@ threading.Thread(
 
 
 # ==================================================
+# Latest DNSE Message Saver
+# ==================================================
+
+def save_latest_dnse_message(
+    payload: dict,
+) -> bool:
+    symbol = str(
+        payload.get("symbol") or ""
+    ).strip().upper()
+
+    if not symbol:
+        logging.warning(
+            "[REDIS SET] Missing symbol | payload=%s",
+            payload,
+        )
+        return False
+
+    key = (
+        f"{LATEST_DNSE_KEY_PREFIX}:"
+        f"{symbol}"
+    )
+
+    value = json.dumps(
+        payload,
+        ensure_ascii=False,
+    )
+
+    for attempt in range(1, 4):
+        try:
+            redis_client.set(
+                key,
+                value,
+            )
+            return True
+
+        except Exception as e:
+            logging.warning(
+                "[REDIS SET] Failed | "
+                "key=%s | attempt=%d/3 | error=%s",
+                key,
+                attempt,
+                e,
+            )
+
+            reconnect_redis()
+
+            if attempt < 3:
+                time.sleep(1)
+
+    logging.error(
+        "[REDIS SET] Give up | "
+        "key=%s | restarting process...",
+        key,
+    )
+
+    os._exit(1)
+
+
+# ==================================================
 # AUTH DNSE
 # ==================================================
 def authenticate(username, password):
@@ -429,11 +492,17 @@ def on_message(client, userdata, msg):
         time_vn_str = time_vn.strftime(
             "%Y-%m-%d %H:%M:%S"
         )
+        latest_time_str = datetime.now(
+            VN_TZ
+        ).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
 
         payload = {
             "function": "chart_1d",
             "symbol": norm_symbol,
             "time": time_vn_str,
+            "latest_time": latest_time_str,
             "open": float(data.get("open") or 0),
             "close": float(data.get("close") or 0),
             "high": float(data.get("high") or 0),
@@ -456,6 +525,8 @@ def on_message(client, userdata, msg):
             payload,
             REDIS_CHANNEL,
         )
+        
+        save_latest_dnse_message(payload)
 
     except Exception:
         logging.exception(
