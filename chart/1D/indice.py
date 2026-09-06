@@ -499,7 +499,7 @@ def on_message(client, userdata, msg):
         )
 
         payload = {
-            "function": "chart_1d",
+            "function": "ohlcv_1d",
             "symbol": norm_symbol,
             "time": time_vn_str,
             "latest_time": latest_time_str,

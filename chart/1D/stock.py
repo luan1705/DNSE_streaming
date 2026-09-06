@@ -394,7 +394,7 @@ def on_message(client, userdata, msg):
         )
 
         payload = {
-            "function": "chart_1d",
+            "function": "ohlcv_1d",
             "symbol": symbol.upper(),
 
             # Giữ nguyên time của code cũ

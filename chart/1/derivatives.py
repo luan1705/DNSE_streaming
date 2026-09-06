@@ -473,7 +473,7 @@ def on_message(
         )
 
         payload = {
-            "function": "chart_1m",
+            "function": "ohlcv_1",
             "symbol": mapped_symbol.upper(),
             "time": time_vn.strftime(
                 "%Y-%m-%d %H:%M:%S"

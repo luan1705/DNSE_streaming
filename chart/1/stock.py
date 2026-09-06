@@ -351,7 +351,7 @@ def on_message(client, userdata, msg):
         time_vn = datetime.fromtimestamp(ts,tz=VN_TZ).replace(second=0,microsecond=0)
         time_vn_str = time_vn.strftime("%Y-%m-%d %H:%M:%S")
         payload = {
-            "function": "chart_1m",
+            "function": "ohlcv_1",
             "symbol": symbol.upper(),
             "time": time_vn_str,
             "open": float(data.get("open") or 0),

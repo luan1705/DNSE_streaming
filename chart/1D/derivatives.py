@@ -445,7 +445,7 @@ def on_message(client, userdata, msg):
         )
 
         payload = {
-            "function": "chart_1d",
+            "function": "ohlcv_1d",
             "symbol": mapped_symbol.upper(),
             "time": time_vn_str,
             "open": float(data.get("open") or 0),
