@@ -17,6 +17,7 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from sqlalchemy import create_engine, text
+from config import REDIS_URL, POSTGRES_URL
 
 
 # ==================================================
@@ -54,16 +55,8 @@ INDEX_LIST = [
 USERNAME = os.getenv("DNSE_USERNAME", "064CCS7GUK")
 PASSWORD = os.getenv("DNSE_PASSWORD", "199204@Vie")
 
-DB_URL = os.getenv(
-    "DB_URL",
-    "postgresql://root:Dnl_123456@tanhungsoft.com:5432/dnl",
-)
 SCHEMA = os.getenv("DB_SCHEMA", "ohlcv")
 
-REDIS_URL = os.getenv(
-    "REDIS_URL",
-    "redis://root:Dnl_123456@tanhungsoft.com:6379",
-)
 REDIS_CHANNEL = os.getenv("REDIS_CHANNEL", "ohlcv_1d")
 
 RESOLUTION = "1D"
@@ -99,7 +92,7 @@ http.mount("http://", adapter)
 # POSTGRES
 # ==================================================
 engine = create_engine(
-    DB_URL,
+    POSTGRES_URL,
     pool_size=5,
     max_overflow=5,
     pool_timeout=20,

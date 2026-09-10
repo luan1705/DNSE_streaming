@@ -10,6 +10,7 @@ x-base-1: &base-1
     - /etc/localtime:/etc/localtime:ro
     - /etc/timezone:/etc/timezone:ro
     - ./List/exchange.py:/app/List/exchange.py
+    - ../config.py:/app/config.py:ro
 
 x-base-1d: &base-1d
   build: .
@@ -22,6 +23,7 @@ x-base-1d: &base-1d
     - /etc/localtime:/etc/localtime:ro
     - /etc/timezone:/etc/timezone:ro
     - ./List/exchange.py:/app/List/exchange.py
+    - ../config.py:/app/config.py:ro
 
 services:
 
@@ -351,6 +353,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./List/exchange.py:/app/List/exchange.py
+      - ../config.py:/app/config.py:ro
 
   chart_indice_1:
     build: .
@@ -363,6 +366,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./List/exchange.py:/app/List/exchange.py
+      - ../config.py:/app/config.py:ro
 
   chart_derivatives_1d:
     build: .
@@ -375,6 +379,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./List/exchange.py:/app/List/exchange.py
+      - ../config.py:/app/config.py:ro
 
   chart_indice_1d:
     build: .
@@ -387,3 +392,4 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./List/exchange.py:/app/List/exchange.py
+      - ../config.py:/app/config.py:ro

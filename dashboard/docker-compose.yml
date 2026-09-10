@@ -13,6 +13,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./List/exchange.py:/app/List/exchange.py
+      - ../config.py:/app/config.py:ro
 
   #---------------------------------------------EBOARD FOREIGN------------------------------------------------
   eboardtopprice:
@@ -24,6 +25,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./List/exchange.py:/app/List/exchange.py
+      - ../config.py:/app/config.py:ro
 
   #---------------------------------------------INDICES------------------------------------------------
   indices:
@@ -35,6 +37,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./List/indice.py:/app/List/indice.py
+      - ../config.py:/app/config.py:ro
 
   dnsewriter:
     image: dnse_streaming:latest
@@ -43,6 +46,8 @@ services:
     networks:
       - appnet
     restart: unless-stopped
+    volumes:
+      - ../config.py:/app/config.py:ro
 
 networks:
   appnet:

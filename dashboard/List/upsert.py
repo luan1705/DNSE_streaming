@@ -3,6 +3,7 @@ import logging
 from datetime import date
 from sqlalchemy import create_engine, MetaData, Table, Column, String, Float, Integer, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from config import POSTGRES_URL
 
 # ============ Logging ============
 logging.basicConfig(
@@ -12,7 +13,7 @@ logging.basicConfig(
 
 # ============ DB ============
 engine = create_engine(
-    "postgresql+psycopg2://root:Dnl_123456@tanhungsoft.com:5432/dnl",
+    POSTGRES_URL,
     echo=False,
     pool_pre_ping=True,
 )

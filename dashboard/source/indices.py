@@ -6,13 +6,13 @@ from zoneinfo import ZoneInfo
 from random import randint
 import ssl
 from requests import post, get
+from config import REDIS_URL
 
 # ====== IMPORTS THEO DỰ ÁN CỦA BẠN ======
 from List.indice import indice
 # =========================================
 
 # ---------- Cấu hình qua ENV ----------
-REDIS_URL   = "redis://root:Dnl_123456@tanhungsoft.com:6379"
 CHANNEL = "DNSE_indices"
 # --------------------------------------
 

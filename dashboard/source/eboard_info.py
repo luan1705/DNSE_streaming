@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from random import randint
 import ssl
 from requests import post, get
+from config import REDIS_URL
 
 # ====== IMPORTS THEO DỰ ÁN CỦA BẠN ======
 from List.exchange import HOSE1, HOSE2, HOSE3, HOSE4, HOSE5, HOSE6, HOSE7, HOSE8, HOSE9, HOSE10, \
@@ -19,7 +20,6 @@ still_list = DERIVATIVES + HNXBOND
 # =========================================
 
 # ---------- Cấu hình qua ENV ----------
-REDIS_URL   = "redis://root:Dnl_123456@tanhungsoft.com:6379"
 CHANNEL = "DNSE_asset"
 # --------------------------------------
 

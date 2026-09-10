@@ -6,14 +6,13 @@ import redis
 
 from sqlalchemy import create_engine, MetaData, Table, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from config import REDIS_URL, POSTGRES_URL
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 # ======================
 # ENV
 # ======================
-REDIS_URL = os.getenv("REDIS_URL", "redis://root:Dnl_123456@tanhungsoft.com:6379")
-DB_URL    = os.getenv("DB_URL", "postgresql+psycopg2://root:Dnl_123456@tanhungsoft.com:5432/dnl")
 
 FLUSH_INTERVAL_MS = int(os.getenv("FLUSH_INTERVAL_MS", "200"))
 MAX_BUFFER_SIZE   = int(os.getenv("MAX_BUFFER_SIZE", "5000"))
@@ -36,7 +35,7 @@ r = redis.Redis(connection_pool=POOL)
 # Postgres
 # ======================
 engine = create_engine(
-    DB_URL,
+    POSTGRES_URL,
     pool_pre_ping=True,
     pool_size=int(os.getenv("DB_POOL_SIZE", "10")),
     max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "0")),
