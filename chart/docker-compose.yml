@@ -1,33 +1,38 @@
 # ===================== BASE CONFIG =====================
+
 x-base-1: &base-1
   build: .
   restart: always
-  env_file: .env
-  command: python3 1/stock.py
+  env_file:
+    - ../../.env
+    - .env
+  command: ["python3", "1/stock.py"]
   environment:
     TZ: Asia/Ho_Chi_Minh
   volumes:
     - /etc/localtime:/etc/localtime:ro
     - /etc/timezone:/etc/timezone:ro
-    - ./List/exchange.py:/app/List/exchange.py
-    - ../config.py:/app/config.py:ro
+    - ./List/exchange.py:/app/List/exchange.py:ro
 
 x-base-1d: &base-1d
   build: .
   restart: always
-  env_file: .env
-  command: python3 1D/stock.py
+  env_file:
+    - ../../.env
+    - .env
+  command: ["python3", "1D/stock.py"]
   environment:
     TZ: Asia/Ho_Chi_Minh
   volumes:
     - /etc/localtime:/etc/localtime:ro
     - /etc/timezone:/etc/timezone:ro
-    - ./List/exchange.py:/app/List/exchange.py
-    - ../config.py:/app/config.py:ro
+    - ./List/exchange.py:/app/List/exchange.py:ro
+
 
 services:
 
   # ===================== HNX 1 =====================
+
   hnx1_1:
     <<: *base-1
     container_name: chart_hnx1_1
@@ -84,7 +89,9 @@ services:
       SYMBOL_NAME: HNX8
       TZ: Asia/Ho_Chi_Minh
 
+
   # ===================== HOSE 1 =====================
+
   hose1_1:
     <<: *base-1
     container_name: chart_hose1_1
@@ -155,7 +162,9 @@ services:
       SYMBOL_NAME: HOSE10
       TZ: Asia/Ho_Chi_Minh
 
+
   # ===================== UPCOM 1 =====================
+
   upcom1_1:
     <<: *base-1
     container_name: chart_upcom1_1
@@ -184,7 +193,9 @@ services:
       SYMBOL_NAME: UPCOM4
       TZ: Asia/Ho_Chi_Minh
 
+
   # ===================== HNX 1D =====================
+
   hnx1_1d:
     <<: *base-1d
     container_name: chart_hnx1_1d
@@ -241,7 +252,9 @@ services:
       SYMBOL_NAME: HNX8
       TZ: Asia/Ho_Chi_Minh
 
+
   # ===================== HOSE 1D =====================
+
   hose1_1d:
     <<: *base-1d
     container_name: chart_hose1_1d
@@ -312,7 +325,9 @@ services:
       SYMBOL_NAME: HOSE10
       TZ: Asia/Ho_Chi_Minh
 
+
   # ===================== UPCOM 1D =====================
+
   upcom1_1d:
     <<: *base-1d
     container_name: chart_upcom1_1d
@@ -341,55 +356,65 @@ services:
       SYMBOL_NAME: UPCOM4
       TZ: Asia/Ho_Chi_Minh
 
+
   # ===================== DERIVATIVES & INDICE =====================
+
   chart_derivatives_1:
     build: .
     container_name: chart_derivatives_1
-    command: python3 1/derivatives.py
+    command: ["python3", "1/derivatives.py"]
     restart: always
+    env_file:
+      - ../../.env
+      - .env
     environment:
       TZ: Asia/Ho_Chi_Minh
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./List/exchange.py:/app/List/exchange.py
-      - ../config.py:/app/config.py:ro
+      - ./List/exchange.py:/app/List/exchange.py:ro
 
   chart_indice_1:
     build: .
     container_name: chart_indice_1
-    command: python3 1/indice.py
+    command: ["python3", "1/indice.py"]
     restart: always
+    env_file:
+      - ../../.env
+      - .env
     environment:
       TZ: Asia/Ho_Chi_Minh
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./List/exchange.py:/app/List/exchange.py
-      - ../config.py:/app/config.py:ro
+      - ./List/exchange.py:/app/List/exchange.py:ro
 
   chart_derivatives_1d:
     build: .
     container_name: chart_derivatives_1d
-    command: python3 1D/derivatives.py
+    command: ["python3", "1D/derivatives.py"]
     restart: always
+    env_file:
+      - ../../.env
+      - .env
     environment:
       TZ: Asia/Ho_Chi_Minh
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./List/exchange.py:/app/List/exchange.py
-      - ../config.py:/app/config.py:ro
+      - ./List/exchange.py:/app/List/exchange.py:ro
 
   chart_indice_1d:
     build: .
     container_name: chart_indice_1d
-    command: python3 1D/indice.py
+    command: ["python3", "1D/indice.py"]
     restart: always
+    env_file:
+      - ../../.env
+      - .env
     environment:
       TZ: Asia/Ho_Chi_Minh
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./List/exchange.py:/app/List/exchange.py
-      - ../config.py:/app/config.py:ro
+      - ./List/exchange.py:/app/List/exchange.py:ro

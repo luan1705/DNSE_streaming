@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import create_engine, text
 
-from config import REDIS_URL, POSTGRES_URL
+
 
 # ==================================================
 # LOGGING
@@ -73,6 +73,8 @@ REDIS_CHANNEL = os.getenv("REDIS_CHANNEL", "ohlcv_1")
 
 RESOLUTION = "1"
 
+redis_url=os.getenv("redis_url")
+db_url=os.getenv("postgres_url")
 
 # ==================================================
 # HTTP SESSION
@@ -100,7 +102,7 @@ http.mount("http://", adapter)
 # POSTGRES
 # ==================================================
 engine = create_engine(
-    POSTGRES_URL,
+    db_url,
     pool_size=5,
     max_overflow=5,
     pool_timeout=20,
@@ -127,7 +129,7 @@ def create_redis():
             pass
 
     redis_pool = redis.BlockingConnectionPool.from_url(
-        REDIS_URL,
+        redis_url,
         decode_responses=True,
         socket_timeout=5,
         socket_connect_timeout=5,

@@ -17,7 +17,6 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import create_engine, text
-from config import REDIS_URL, POSTGRES_URL
 
 # ==================================================
 # LOGGING
@@ -80,6 +79,8 @@ LATEST_DNSE_KEY_PREFIX = os.getenv(
     "LATEST_DNSE_KEY_PREFIX",
     "latest_dnse_streaming_message_1"
 )
+redis_url=os.getenv("redis_url")
+db_url=os.getenv("postgres_url")
 
 # ==================================================
 # HTTP SESSION
@@ -93,7 +94,7 @@ http.mount("http://", adapter)
 # ==================================================
 # POSTGRES
 # ==================================================
-engine = create_engine(POSTGRES_URL, pool_size=5, max_overflow=5, pool_timeout=20, pool_recycle=1800, pool_pre_ping=True)
+engine = create_engine(db_url, pool_size=5, max_overflow=5, pool_timeout=20, pool_recycle=1800, pool_pre_ping=True)
 
 # ==================================================
 # REDIS CONNECTION
@@ -113,7 +114,7 @@ def create_redis():
             pass
 
     redis_pool = redis.BlockingConnectionPool.from_url(
-        REDIS_URL,
+        redis_url,
         decode_responses=True,
         socket_timeout=5,
         socket_connect_timeout=5,

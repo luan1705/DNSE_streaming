@@ -6,48 +6,48 @@ services:
       context: .
       dockerfile: Dockerfile
     image: dnse_streaming:latest
+    env_file:
+      - ../../.env
     container_name: eboardinfo
-    command: python3 source/eboard_info.py
-    networks:
-      - appnet
+    command: ["python3", "source/eboard_info.py"]
+    networks: [appnet]
     restart: unless-stopped
     volumes:
-      - ./List/exchange.py:/app/List/exchange.py
-      - ../config.py:/app/config.py:ro
+      - ./List/exchange.py:/app/List/exchange.py:ro
 
-  #---------------------------------------------EBOARD FOREIGN------------------------------------------------
+  #---------------------------------------------EBOARD TOP PRICE--------------------------------------------
   eboardtopprice:
     image: dnse_streaming:latest
+    env_file:
+      - ../../.env
     container_name: eboardtopprice
-    command: python3 source/eboard_top_price.py
-    networks:
-      - appnet
+    command: ["python3", "source/eboard_top_price.py"]
+    networks: [appnet]
     restart: unless-stopped
     volumes:
-      - ./List/exchange.py:/app/List/exchange.py
-      - ../config.py:/app/config.py:ro
+      - ./List/exchange.py:/app/List/exchange.py:ro
 
-  #---------------------------------------------INDICES------------------------------------------------
+  #---------------------------------------------INDICES-----------------------------------------------------
   indices:
     image: dnse_streaming:latest
+    env_file:
+      - ../../.env
     container_name: indices
-    command: python3 source/indices.py
-    networks:
-      - appnet
+    command: ["python3", "source/indices.py"]
+    networks: [appnet]
     restart: unless-stopped
     volumes:
-      - ./List/indice.py:/app/List/indice.py
-      - ../config.py:/app/config.py:ro
+      - ./List/indice.py:/app/List/indice.py:ro
 
+  #---------------------------------------------DB WRITER---------------------------------------------------
   dnsewriter:
     image: dnse_streaming:latest
+    env_file:
+      - ../../.env
     container_name: dnsewriter
-    command: python3 db_writer/dnsewriter.py
-    networks:
-      - appnet
+    command: ["python3", "db_writer/dnsewriter.py"]
+    networks: [appnet]
     restart: unless-stopped
-    volumes:
-      - ../config.py:/app/config.py:ro
 
 networks:
   appnet:

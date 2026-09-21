@@ -13,7 +13,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 # ======================
 # ENV
 # ======================
-
+redis_url=os.getenv("redis_url")
+db_url=os.getenv("postgres_url")
 FLUSH_INTERVAL_MS = int(os.getenv("FLUSH_INTERVAL_MS", "200"))
 MAX_BUFFER_SIZE   = int(os.getenv("MAX_BUFFER_SIZE", "5000"))
 
@@ -21,7 +22,7 @@ MAX_BUFFER_SIZE   = int(os.getenv("MAX_BUFFER_SIZE", "5000"))
 # Redis
 # ======================
 POOL = redis.BlockingConnectionPool.from_url(
-    REDIS_URL,
+    redis_url,
     decode_responses=True,
     socket_timeout=60,
     socket_connect_timeout=5,
@@ -35,7 +36,7 @@ r = redis.Redis(connection_pool=POOL)
 # Postgres
 # ======================
 engine = create_engine(
-    POSTGRES_URL,
+    db_url,
     pool_pre_ping=True,
     pool_size=int(os.getenv("DB_POOL_SIZE", "10")),
     max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "0")),
